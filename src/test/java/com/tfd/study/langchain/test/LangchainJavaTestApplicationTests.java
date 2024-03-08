@@ -34,7 +34,7 @@ class LangchainJavaTestApplicationTests {
 
     @BeforeAll
     public static void before() {
-        Constants.apiKey = "sk-57b19d2c8a084b3f82351ea9cf18ddbc";
+        Constants.apiKey = "sk-ea3e6dbe81f94b4b9cad85270d83553d";
         model = Conversation.Models.QWEN_MAX;
     }
 
@@ -103,10 +103,34 @@ class LangchainJavaTestApplicationTests {
         ImageSynthesisResult result = is.call(param);
         System.out.println(result);
         // save image to local files.
-        for(Map<String, String> item :result.getOutput().getResults()){
+        loadImg(client, result);
+    }
+
+    @Test
+    public void imageSynthesis() throws Exception {
+        OkHttpClient client = new OkHttpClient();
+        String prompt = "请给我画一位魅惑感的十足的性感女性，她立于高楼之巅，身着彰显曲线美的优雅服饰，面部洋溢着从容不迫的自信神态，双手有力地摆出代表决心与力量的姿势，以此体现现代女性的独立与毅力。";
+        String size = "1024*1024";
+        ImageSynthesis is = new ImageSynthesis();
+        ImageSynthesisParam param =
+                ImageSynthesisParam.builder()
+                        .model(ImageSynthesis.Models.WANX_V1)
+                        .n(4)
+                        .size(size)
+                        .prompt(prompt)
+                        .build();
+
+        ImageSynthesisResult result = is.call(param);
+        System.out.println(result);
+        // save image to local files.
+        loadImg(client, result);
+    }
+
+    private void loadImg(OkHttpClient client, ImageSynthesisResult result) throws IOException {
+        for (Map<String, String> item : result.getOutput().getResults()) {
             String paths = new URL(item.get("url")).getPath();
             String[] parts = paths.split("/");
-            String fileName = parts[parts.length-1];
+            String fileName = parts[parts.length - 1];
             Request request = new Request.Builder()
                     .url(item.get("url"))
                     .build();
@@ -123,12 +147,4 @@ class LangchainJavaTestApplicationTests {
         }
     }
 
-    public void fetchTask() throws Exception {
-        String taskId = "your task id";
-        ImageSynthesis is = new ImageSynthesis();
-        // If set DASHSCOPE_API_KEY environment variable, apiKey can null.
-        ImageSynthesisResult result = is.fetch(taskId, null);
-        System.out.println(result.getOutput());
-        System.out.println(result.getUsage());
-    }
 }
