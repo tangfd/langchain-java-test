@@ -13,8 +13,10 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.dashscope.QwenChatModel;
 import dev.langchain4j.model.embedding.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.injector.DefaultContentInjector;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.transformer.CompressingQueryTransformer;
@@ -72,6 +74,25 @@ public class RagWithQueryCompressionWithDashScopeTest {
         }
     }
 
+    public static final PromptTemplate TRANSFORMER_PROMPT_TEMPLATE = PromptTemplate.from(
+            "阅读并理解用户(User)和人工智能(AI)之间的对话。然后，分析用户的新查询。从对话和新查询中识别所有相关的细节、术语和上下文。" +
+                    "将此查询重新格式化为适用于信息检索的清晰、简洁和自包含的格式.\n" +
+                    "\n" +
+                    "用户(User)和人工智能(AI)之间的对话:\n" +
+                    "{{chatMemory}}\n" +
+                    "\n" +
+                    "用户(User)的新查询: {{query}}\n" +
+                    "\n" +
+                    "非常重要的是，您只提供重新制定的查询，而不提供其他查询！不要在查询前添加任何其它内容!"
+    );
+
+    public static final PromptTemplate CONTENTINJECTOR_PROMPT_TEMPLATE = PromptTemplate.from(
+            "{{userMessage}}\n" +
+                    "\n" +
+                    "优先使用以下信息进行回答:\n" +
+                    "{{contents}}"
+    );
+
     private static Biographer createBiographer() {
 
         // Check _01_Naive_RAG if you need more details on what is going on here
@@ -84,7 +105,7 @@ public class RagWithQueryCompressionWithDashScopeTest {
         // We will create a CompressingQueryTransformer, which is responsible for compressing
         // the user's query and the preceding conversation into a single, stand-alone query.
         // This should significantly improve the quality of the retrieval process.
-        QueryTransformer queryTransformer = new CompressingQueryTransformer(model);
+        QueryTransformer queryTransformer = new CompressingQueryTransformer(model, TRANSFORMER_PROMPT_TEMPLATE);
 
         ContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
@@ -99,6 +120,7 @@ public class RagWithQueryCompressionWithDashScopeTest {
         RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.builder()
                 .queryTransformer(queryTransformer)
                 .contentRetriever(contentRetriever)
+                .contentInjector(new DefaultContentInjector(CONTENTINJECTOR_PROMPT_TEMPLATE))
                 .build();
 
         return AiServices.builder(Biographer.class)
