@@ -1,11 +1,12 @@
 package com.tfd.study.langchain.test;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.github.victools.jsonschema.generator.*;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.dashscope.QwenChatModel;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.service.AiServices;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,9 +22,9 @@ public class LangChainWithDashScopeTest {
 
     @BeforeAll
     public static void before() {
-        model = QwenChatModel.builder()
+        model = QwenToolsChatModel.builder()
                 .apiKey("sk-ea3e6dbe81f94b4b9cad85270d83553d")
-                .modelName("qwen-72b-chat")
+                .modelName("qwen-plus")//qwen-turbo、qwen-plus、qwen-max、qwen-max-longcontext。
 //                .temperature(1.9f)
                 .build();
     }
@@ -42,13 +43,32 @@ public class LangChainWithDashScopeTest {
 
     @Test
     public void testTools() {
-        UserMessage firstUserMessage = UserMessage.from("你是一个计算天才，现在请计算一下“离开多数据库法律上JFK介绍了地方”和“开始了地方还是老地方海上分列式警方很快”这两句话中共有多少个字？");
-        Response<AiMessage> generate = model.generate(firstUserMessage);
-        System.out.println(generate);
+        ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
+        Assistant assistant = AiServices.builder(Assistant.class)
+                .chatLanguageModel(model)
+                .chatMemory(chatMemory)
+                .tools(new ToolsUtil())
+                .build();
+
+        AiMessage message = assistant.chat("你是一个计算天才，现在请计算一下“离开多数据库法律上JFK介绍了地方”和“开始了地方还是老地方海上分列式警方很快”这两句话中共有多少个字？尽量使用函数工具进行计算。");
+        System.out.println(message);
+    }
+
+    @Test
+    public void testSchemaGenerator() {
+        SchemaGeneratorConfigBuilder configBuilder =
+                new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON);
+        SchemaGeneratorConfig config = configBuilder.with(Option.EXTRA_OPEN_API_FORMAT_VALUES)
+                .without(Option.FLATTENED_ENUMS_FROM_TOSTRING).build();
+        SchemaGenerator generator = new SchemaGenerator(config);
+
+        // generate jsonSchema of function.
+        ObjectNode jsonSchema = generator.generateSchema(ToolsUtil.class);
+        System.out.println(jsonSchema);
     }
 
     interface Assistant {
-        String chat(String message);
+        AiMessage chat(String message);
     }
 
     @Test
@@ -63,9 +83,9 @@ public class LangChainWithDashScopeTest {
         System.out.print("User: ");
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
-            String answer = assistant.chat(line);
+            AiMessage message = assistant.chat(line);
             System.out.print("Answer: ");
-            System.out.println(answer);
+            System.out.println(message);
             System.out.println();
             System.out.print("User: ");
         }

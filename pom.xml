@@ -27,16 +27,26 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>-->
 
-        <!--<dependency>
+        <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>dashscope-sdk-java</artifactId>
-            <version>2.10.1</version>
-        </dependency>-->
+            <version>2.12.0</version>
+        </dependency>
 
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-dashscope</artifactId>
             <version>${langchain4j.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>dashscope-sdk-java</artifactId>
+                    <groupId>com.alibaba</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>langchain4j-core</artifactId>
+                    <groupId>dev.langchain4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -48,6 +58,12 @@
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
             <version>${langchain4j.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>langchain4j-core</artifactId>
+                    <groupId>dev.langchain4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
