@@ -15,7 +15,6 @@ import dev.langchain4j.data.message.*;
 import dev.langchain4j.internal.Utils;
 import dev.langchain4j.model.output.FinishReason;
 import dev.langchain4j.model.output.TokenUsage;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.io.ByteArrayInputStream;
@@ -39,6 +38,7 @@ public class QwenHelper {
     static List<Message> toQwenMessages(List<ChatMessage> messages) {
         return messages.stream()
                 .map(QwenHelper::toQwenMessage)
+//                .filter(m -> StringUtils.isNotEmpty(m.getContent()))
                 .collect(toList());
     }
 
@@ -49,10 +49,27 @@ public class QwenHelper {
     }
 
     static Message toQwenMessage(ChatMessage message) {
-        return Message.builder()
+        Message.MessageBuilder<?, ?> builder = Message.builder()
                 .role(roleFrom(message))
-                .content(toSingleText(message))
-                .build();
+                .content(toSingleText(message));
+        if (ChatMessageType.TOOL_EXECUTION_RESULT.equals(message.type())) {
+            builder.toolCallId(((ToolExecutionResultMessage) message).toolName());
+        } else if (ChatMessageType.AI.equals(message.type()) && ((AiMessage) message).hasToolExecutionRequests()) {
+            builder.toolCalls(((AiMessage) message).toolExecutionRequests().stream()
+                    .map(QwenHelper::result2CallBase)
+                    .collect(Collectors.toList()));
+        }
+
+        return builder.build();
+    }
+
+    private static ToolCallFunction result2CallBase(ToolExecutionRequest tool) {
+        ToolCallFunction toolCallFunction = ToolCallFunction.builder().build();
+        ToolCallFunction.CallFunction function = toolCallFunction.new CallFunction();
+        function.setName(tool.name());
+        function.setArguments(tool.arguments());
+        toolCallFunction.setFunction(function);
+        return toolCallFunction;
     }
 
     static String toSingleText(ChatMessage message) {
@@ -66,11 +83,7 @@ public class QwenHelper {
                         .collect(Collectors.joining("\n"));
             case AI:
                 String text = ((AiMessage) message).text();
-                if (StringUtils.isEmpty(text) && ((AiMessage) message).hasToolExecutionRequests()) {
-                    return "等待执行工具函数结果";
-                }
-
-                return text;
+                return text == null ? "" : text;
             case SYSTEM:
                 return ((SystemMessage) message).text();
             case TOOL_EXECUTION_RESULT:
@@ -170,6 +183,8 @@ public class QwenHelper {
             return ASSISTANT.getValue();
         } else if (message instanceof SystemMessage) {
             return SYSTEM.getValue();
+        } else if (message instanceof ToolExecutionResultMessage) {
+            return "tool";
         } else {
             return USER.getValue();
         }

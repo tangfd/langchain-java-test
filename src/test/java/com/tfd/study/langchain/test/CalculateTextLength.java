@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * @author TangFD 2024/3/27
  */
-public class ToolsUtil {
+public class CalculateTextLength {
     private final String content = null;
 
     @Tool("这是一个用于计算给定的文本内容具有多少个字（文本长度）的方法")

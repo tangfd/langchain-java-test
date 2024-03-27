@@ -25,10 +25,12 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.dashscope.QwenModelName;
 import dev.langchain4j.model.output.Response;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
+@Slf4j
 public class QwenToolsChatModel implements ChatLanguageModel {
     private final String apiKey;
     private final String modelName;
@@ -140,7 +142,9 @@ public class QwenToolsChatModel implements ChatLanguageModel {
                 builder.stopStrings(stops);
             }
 
+            log.info("call llm messages: 【{}】", builder);
             GenerationResult generationResult = generation.call(builder.build());
+            log.info("call llm result: 【{}】", generationResult);
             List<ToolExecutionRequest> toolExecutionRequests = QwenHelper.functionFrom(generationResult);
             if (!CollectionUtils.isEmpty(toolExecutionRequests)) {
                 return Response.from(AiMessage.from(toolExecutionRequests),

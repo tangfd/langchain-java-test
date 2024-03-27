@@ -24,7 +24,7 @@ public class LangChainWithDashScopeTest {
     public static void before() {
         model = QwenToolsChatModel.builder()
                 .apiKey("sk-ea3e6dbe81f94b4b9cad85270d83553d")
-                .modelName("qwen-plus")//qwen-turbo、qwen-plus、qwen-max、qwen-max-longcontext。
+                .modelName("qwen-max")//qwen-turbo、qwen-plus、qwen-max、qwen-max-longcontext。
 //                .temperature(1.9f)
                 .build();
     }
@@ -47,10 +47,10 @@ public class LangChainWithDashScopeTest {
         Assistant assistant = AiServices.builder(Assistant.class)
                 .chatLanguageModel(model)
                 .chatMemory(chatMemory)
-                .tools(new ToolsUtil())
+                .tools(new CalculateTextLength(), new CalculateNum())
                 .build();
 
-        AiMessage message = assistant.chat("你是一个计算天才，现在请计算一下“离开多数据库法律上JFK介绍了地方”和“开始了地方还是老地方海上分列式警方很快”这两句话中共有多少个字？尽量使用函数工具进行计算。");
+        AiMessage message = assistant.chat("你是一个计算天才，现在请分别计算一下“离开多数据库法律上JFK介绍了地方”和“开始了地方还是老地方海上分列式警方很快”这两句话中各有多少个字符？一起共有多少个字符？尽量使用函数工具进行计算。");
         System.out.println(message);
     }
 
@@ -63,7 +63,7 @@ public class LangChainWithDashScopeTest {
         SchemaGenerator generator = new SchemaGenerator(config);
 
         // generate jsonSchema of function.
-        ObjectNode jsonSchema = generator.generateSchema(ToolsUtil.class);
+        ObjectNode jsonSchema = generator.generateSchema(CalculateTextLength.class);
         System.out.println(jsonSchema);
     }
 
