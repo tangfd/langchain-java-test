@@ -153,7 +153,7 @@ public class ToolsAiServices<T> extends AiServices<T> {
                             for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
                                 ToolExecutor toolExecutor = context.toolExecutors.get(toolExecutionRequest.name());
                                 String toolExecutionResult = toolExecutor.execute(toolExecutionRequest, memoryId);
-                                ToolExecutionResultMessage toolExecutionResultMessage = ToolExecutionResultMessage.from(
+                                ToolExecutionResultMessage toolExecutionResultMessage = ToolFunctionExecutionResultMessage.from(
                                         toolExecutionRequest,
                                         toolExecutionResult
                                 );

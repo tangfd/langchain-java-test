@@ -52,8 +52,8 @@ public class QwenHelper {
         Message.MessageBuilder<?, ?> builder = Message.builder()
                 .role(roleFrom(message))
                 .content(toSingleText(message));
-        if (ChatMessageType.TOOL_EXECUTION_RESULT.equals(message.type())) {
-            builder.toolCallId(((ToolExecutionResultMessage) message).toolName());
+        if (ChatMessageType.TOOL_EXECUTION_RESULT.equals(message.type()) && message instanceof ToolFunctionExecutionResultMessage) {
+            builder.toolCalls(Collections.singletonList(QwenHelper.result2CallBase(((ToolFunctionExecutionResultMessage) message).getRequest())));
         } else if (ChatMessageType.AI.equals(message.type()) && ((AiMessage) message).hasToolExecutionRequests()) {
             builder.toolCalls(((AiMessage) message).toolExecutionRequests().stream()
                     .map(QwenHelper::result2CallBase)
